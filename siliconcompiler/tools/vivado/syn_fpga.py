@@ -42,7 +42,8 @@ class SynthesisTask(VivadoTask):
     def setup(self):
         super().setup()
 
-        self.add_input_file(ext="v")
+        #self.add_input_file(ext="v")
+        self.add_input_file(ext="sv")
         self.add_output_file(ext="vg")
         self.add_output_file(ext="dcp")
         self.add_output_file(ext="xdc")

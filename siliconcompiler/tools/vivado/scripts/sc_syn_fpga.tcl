@@ -12,7 +12,15 @@ foreach sc_pre_script [sc_cfg_tool_task_get prescript] {
 if { [string equal [get_filesets -quiet sources_1] ""] } {
     create_fileset -srcset sources_1
 }
-add_files -norecurse -fileset [get_filesets sources_1] "inputs/${sc_topmodule}.v"
+
+# add source files (try SystemVerilog first, then Verilog)
+if { [file exists "inputs/${sc_topmodule}.sv"] } {
+    add_files -norecurse -fileset [get_filesets sources_1] "inputs/${sc_topmodule}.sv"
+    set_property file_type SystemVerilog [get_files "inputs/${sc_topmodule}.sv"]
+} else {
+    add_files -norecurse -fileset [get_filesets sources_1] "inputs/${sc_topmodule}.v"
+    set_property file_type Verilog [get_files "inputs/${sc_topmodule}.v"]
+}
 set_property top $sc_topmodule [current_fileset]
 
 # add constraints
