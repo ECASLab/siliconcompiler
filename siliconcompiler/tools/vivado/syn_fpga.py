@@ -10,6 +10,15 @@ class SynthesisTask(VivadoTask):
         self.add_parameter("synth_directive", "str", "synthesis directive", defvalue="Default")
         self.add_parameter("synth_mode", "str", "synthesis mode", defvalue="none")
 
+        # Clock Wizard parameters
+        self.add_parameter("clk_wiz_freq", "str", 
+                           "Clock Wizard output freq in MHz, 'none' to disable",
+                           defvalue="none")
+        self.add_parameter("clk_wiz_name", "str",
+                           "Clock Wizard instance name",
+                           defvalue="clk_wiz_0")
+
+
     def set_vivado_synthdirective(self, directive: str,
                                   step: Optional[str] = None,
                                   index: Optional[str] = None):
@@ -50,3 +59,6 @@ class SynthesisTask(VivadoTask):
 
         self.add_required_key("var", "synth_directive")
         self.add_required_key("var", "synth_mode")
+
+        self.add_required_key("var", "clk_wiz_freq")
+        self.add_required_key("var", "clk_wiz_name")

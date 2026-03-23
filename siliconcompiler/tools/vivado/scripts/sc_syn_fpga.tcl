@@ -8,6 +8,27 @@ foreach sc_pre_script [sc_cfg_tool_task_get prescript] {
     source $sc_pre_script
 }
 
+# generate clock wizard IP if requested
+set clk_wiz_freq [sc_cfg_tool_task_get var clk_wiz_freq]
+if { $clk_wiz_freq != "none" } {
+    set clk_wiz_name [sc_cfg_tool_task_get var clk_wiz_name]
+    puts "INFO: Generating Clock Wizard IP '${clk_wiz_name}' at ${clk_wiz_freq} MHz"
+
+    create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 \
+              -module_name $clk_wiz_name
+
+    set_property -dict [list \
+        CONFIG.CLKOUT1_DRIVES          {BUFG} \
+        CONFIG.CLKOUT1_REQUESTED_OUT_FREQ $clk_wiz_freq \
+        CONFIG.MMCM_BANDWIDTH          {OPTIMIZED} \
+        CONFIG.MMCM_COMPENSATION       {ZHOLD} \
+        CONFIG.PRIMITIVE               {MMCM} \
+    ] [get_ips $clk_wiz_name]
+
+    generate_target all [get_ips $clk_wiz_name]
+    synth_ip [get_ips $clk_wiz_name]
+}
+
 # add imported files
 if { [string equal [get_filesets -quiet sources_1] ""] } {
     create_fileset -srcset sources_1
