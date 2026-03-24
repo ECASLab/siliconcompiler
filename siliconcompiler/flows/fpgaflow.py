@@ -8,6 +8,7 @@ from siliconcompiler.tools.vivado import syn_fpga as vivado_syn
 from siliconcompiler.tools.vivado import place as vivado_place
 from siliconcompiler.tools.vivado import route as vivado_route
 from siliconcompiler.tools.vivado import bitstream as vivado_bitstream
+from siliconcompiler.tools.vivado import load_bitstream as vivado_load
 
 from siliconcompiler.tools.nextpnr import apr as nextpnr_apr
 
@@ -29,7 +30,7 @@ class FPGAXilinxFlow(Flowgraph):
         * **route**: Route the connections between placed components.
         * **bitstream**: Generate the final bitstream for device programming.
     '''
-    def __init__(self, name: str = "fpgaflow-xilinx"):
+    def __init__(self, name: str = "fpgaflow-xilinx", program: bool = False):
         """
         Initializes the FPGAXilinxFlow.
 
@@ -47,6 +48,10 @@ class FPGAXilinxFlow(Flowgraph):
         self.edge("place", "route")
         self.node("bitstream", vivado_bitstream.BitstreamTask())
         self.edge("route", "bitstream")
+
+        if program:
+            self.node("load_bitstream", vivado_load.LoadBitstreamTask())
+            self.edge("bitstream", "load_bitstream")
 
 
 class FPGANextPNRFlow(Flowgraph):
