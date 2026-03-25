@@ -1,3 +1,5 @@
+![SiliconCompiler](https://raw.githubusercontent.com/siliconcompiler/siliconcompiler/main/docs/_static/sc_logo_with_text.png)
+
 # Introduction
 
 SiliconCompiler is an open-source framework that enables automated hardware design flows across multiple EDA tools. While it is commonly used for ASIC design, it can also be configured to work with FPGA toolchains such as Xilinx Vivado.
@@ -101,10 +103,20 @@ def main():
     project.set_fpga(fpga_device)
 
     # 7. Select Vivado flow (Xilinx)
-    flow = FPGAXilinxFlow()
+    flow = FPGAXilinxFlow(program=True)
     project.set_flow(flow)
 
-    # 8. Run synthesis flow
+    # 8. Clocking Wizard IP support
+    project.set('tool', 'vivado', 'task', 'syn_fpga', 'var', 'clk_wiz_freq', '10.000')
+    project.set('tool', 'vivado', 'task', 'syn_fpga', 'var', 'clk_wiz_name', 'clk_wiz_0')
+
+    # 9. Selects target
+    project.set('tool', 'vivado', 'task', 'bitstream', 'var', 'program_target', '*xc7a35t*')
+
+    # 10. Uncomment to only load bitstream
+    # project.set('option', 'from', 'load_bitstream')
+
+    # 11. Run synthesis flow
     project.run()
     project.summary()
 
@@ -146,8 +158,8 @@ By default, SiliconCompiler will generate the bitstream, but it will not automat
 To enable automatic programming using Xilinx Vivado, add the following configuration:
 
 ```python
-# Enables programming
-project.set('tool', 'vivado', 'task', 'bitstream', 'var', 'program_fpga', 'true')
+# Creates and initialize the flow and Enables programming
+flow = FPGAXilinxFlow(program=True)
 # Target specification
 project.set('tool', 'vivado', 'task', 'bitstream', 'var', 'program_target', '*xc7a35t*')
 ```
@@ -160,58 +172,6 @@ project.set('tool', 'vivado', 'task', 'bitstream', 'var', 'program_target', '*xc
 > *xc7a35t* = Basys3 (Artix-7)
 > You may need to adjust this depending on your board
 
-# Full script example
-
-```python
-from siliconcompiler import Design, FPGA, FPGADevice
-from siliconcompiler.flows.fpgaflow import FPGAXilinxFlow
-
-def main():
-    # 1. Create design 
-    design = Design('top_example')
-
-    # 2. Add RTL source
-    design.add_file('sources/top_example.sv', fileset='rtl')
-
-    # 2.1 Add multiple files
-    design.add_file('sources/module1.sv', fileset='rtl')
-    design.add_file('sources/module2.sv', fileset='rtl')
-    
-    # 3. Set top module name
-    design.set_topmodule('top_example', fileset='rtl')
-
-    # 4. Add constraints
-    design.add_file('constraints/constraints.xdc', fileset='constraint')
-
-    # 5. Create FPGA project
-    project = FPGA(design)
-    project.add_fileset(['rtl', 'constraint'])
-
-    # 6. Select FPGA device
-    fpga_device = FPGADevice("xc7")
-    fpga_device.set_partname("xc7a35tcpg236-1")
-    project.set_fpga(fpga_device)
-
-    # 7. Select Vivado flow (Xilinx)
-    flow = FPGAXilinxFlow()
-    project.set_flow(flow)
-
-    # 8. Clocking Wizard IP support
-    project.set('tool', 'vivado', 'task', 'syn_fpga', 'var', 'clk_wiz_freq', '10.000')
-    project.set('tool', 'vivado', 'task', 'syn_fpga', 'var', 'clk_wiz_name', 'clk_wiz_0')
-
-    # 9. Enables automatic programming
-    project.set('tool', 'vivado', 'task', 'bitstream', 'var', 'program_fpga', 'true')
-    project.set('tool', 'vivado', 'task', 'bitstream', 'var', 'program_target', '*xc7a35t*')
-
-    # 9. Run synthesis flow
-    project.run()
-    project.summary()
-
-
-if __name__ == "__main__":
-    main()  
-```
 
 # Running the flow
 
@@ -244,9 +204,33 @@ Example structure:
 build/
 └── top_example/
     └── job0/
+        ├── elaborate/
         ├── syn_fpga/
         ├── place/
         ├── route/
-        └── bitstream/
+        ├── bitstream/
+        └── load_bitstream/
 ```
+# Re-running the Flow
 
+SiliconCompiler stores the results of each run (such as synthesis, implementation, and bitstream generation).
+
+If you run the same script again without making any changes, the tool may detect that all steps are already completed and:
+
+- Skip execution
+- Reuse previous results
+- Finish almost immediately
+
+This can make it seem like nothing happened, but in reality the flow is using cached data. And most importantly, the programming step will not run again unless the flow is explicitly triggered.
+
+## How to reprogram the FPGA
+
+If you want to program the FPGA again using the existing bitstream, you must explicitly run the programming step:
+
+```python
+project.set('option', 'from', 'load_bitstream')
+```
+This forces SiliconCompiler to:
+
+- Skip compilation steps
+- Execute only the bitstream loading step
