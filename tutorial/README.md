@@ -2,9 +2,15 @@
 
 # Introduction
 
-SiliconCompiler is an open-source framework that enables automated hardware design flows across multiple EDA tools. While it is commonly used for ASIC design, it can also be configured to work with FPGA toolchains such as Xilinx Vivado.
+SiliconCompiler is an open-source framework for automating hardware design flows across multiple EDA tools. Although it is commonly used for ASIC design, it can also be configured for FPGA toolchains such as Xilinx Vivado.
 
-In this tutorial, we will show how to use SiliconCompiler to run a synthesis flow using Vivado.
+This tutorial shows how to use SiliconCompiler to run an FPGA synthesis and implementation flow with Vivado.
+
+# Installation
+
+Before starting, make sure you have Python 3.9 or newer installed.
+
+Create a virtual environment in your project directory or in any location you prefer:
 
 # Installation
 
@@ -76,6 +82,9 @@ project/
 from siliconcompiler import Design, FPGA, FPGADevice
 from siliconcompiler.flows.fpgaflow import FPGAXilinxFlow
 
+# Boolean variable to enable the program to target
+enable_programming = True
+
 def main():
     # 1. Create design 
     design = Design('top_example')
@@ -103,18 +112,19 @@ def main():
     project.set_fpga(fpga_device)
 
     # 7. Select Vivado flow (Xilinx)
-    flow = FPGAXilinxFlow(program=True)
+    flow = FPGAXilinxFlow(program=enable_programming)
     project.set_flow(flow)
 
     # 8. Clocking Wizard IP support
     project.set('tool', 'vivado', 'task', 'syn_fpga', 'var', 'clk_wiz_freq', '10.000')
     project.set('tool', 'vivado', 'task', 'syn_fpga', 'var', 'clk_wiz_name', 'clk_wiz_0')
 
-    # 9. Selects target
-    project.set('tool', 'vivado', 'task', 'bitstream', 'var', 'program_target', '*xc7a35t*')
+    if enable_programming:
+        # 9. Selects target
+        project.set('tool', 'vivado', 'task', 'bitstream', 'var', 'program_target', '*xc7a35t*')
 
-    # 10. Uncomment to only load bitstream
-    # project.set('option', 'from', 'load_bitstream')
+        # 10. Uncomment to only load bitstream
+        # project.set('option', 'from', 'load_bitstream')
 
     # 11. Run synthesis flow
     project.run()
@@ -127,7 +137,7 @@ if __name__ == "__main__":
 
 
 > [!NOTE]
-> The FPGA part (xc7a35tcpg236-1) corresponds to boards like the Basys3, but you should change it according to your hardware.
+> The FPGA part `xc7a35tcpg236-1` corresponds to boards like the Basys3, but you should change it according to your hardware.
 
 ## Optional: Using the Clock Wizard IP
 
