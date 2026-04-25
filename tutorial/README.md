@@ -169,7 +169,9 @@ To enable automatic programming using Xilinx Vivado, add the following configura
 
 ```python
 # Creates and initialize the flow and Enables programming
-flow = FPGAXilinxFlow(program=True)
+flow = FPGAXilinxFlow(program=enable_programming)
+...
+...
 # Target specification
 project.set('tool', 'vivado', 'task', 'bitstream', 'var', 'program_target', '*xc7a35t*')
 ```
@@ -244,3 +246,81 @@ This forces SiliconCompiler to:
 
 - Skip compilation steps
 - Execute only the bitstream loading step
+
+
+# Simulation 
+
+It is possible to run simulations with SiliconCompiler using Icarus Verilog.
+
+
+## Example Script
+
+The following script shows an example implementation:
+
+
+```python
+from siliconcompiler import Design, Sim
+from siliconcompiler.flows.dvflow import DVFlow
+
+def main():
+    # 1. Create design 
+    design = Design('top_example_tb')
+
+    # 2. Add TB and RTL source
+    design.add_file('testbench/top_example_tb.sv', fileset='tb')
+    design.add_file('sources/top_example.sv', fileset='rtl')
+
+    # 2.1 Add multiple files
+    design.add_file('sources/module1.sv', fileset='rtl')
+    design.add_file('sources/module2.sv', fileset='rtl')
+    
+    # 3. Set top module name
+    design.set_topmodule('top_example_tb', fileset='rtl')
+    design.set_topmodule('top_example_tb', fileset='tb')
+
+    # 4. Create Sim project
+    project = Sim(design)
+    project.add_fileset(["rtl", "tb"])
+
+    # 5. Select Icarus flow 
+    flow = DVFlow(tool='icarus')
+    project.set_flow(flow)
+
+    # 6. Enable SystemVerilog support
+    project.set('tool', 'icarus', 'task', 'compile', 'option', '-g2012')
+
+    # 7. Run simulation flow
+    project.run()
+    project.summary()
+
+
+if __name__ == "__main__":
+    main()  
+```
+
+## Running the simulation
+
+You can execute the simulation with:
+
+```sh
+python3 sim_example.py
+```
+
+## Output Files
+
+After running the simulation, SiliconCompiler will generate a build directory containing:
+
+- Simulation log
+- VCD file
+
+Example structure:
+
+```
+build/
+└── top_example_tb/
+    └── job0/
+        ├── compile/
+        └── simulate/
+            ├── simulate.log
+            └── example.vcd
+```
